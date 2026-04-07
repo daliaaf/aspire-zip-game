@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aspire IT — ZIP Game</title>
+<title>Aspire — ZIP Game</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -484,8 +484,13 @@
 </div>
 
 <script>
+  // ---- BACKEND CONFIG ----
+  // For local development: http://localhost:3000/api
+  // For other devices on the same network, replace localhost with your machine's IP,
+  // e.g. http://192.168.1.42:3000/api
+  const API_BASE = 'http://localhost:3000/api';
+
   // ---- STATE ----
-  const STORAGE_KEY = 'aspire_zip_scores';
   let playerName = '';
   let timerInterval = null;
   let startTime = null;
@@ -494,26 +499,46 @@
   let gridNumbers = [];
   let gameActive = false;
 
-  // ---- STORAGE ----
-  function getScores() {
+  // ---- API HELPERS ----
+
+  // Fetch all scores from the backend (returns array, empty on error)
+  async function getScores() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch { return []; }
-  }
-
-  function saveScore(name, time) {
-    const scores = getScores();
-    scores.push({ name, time, ts: Date.now() });
-    scores.sort((a,b) => a.time - b.time);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(scores));
-  }
-
-  function clearScores() {
-    if (confirm('Clear all scores?')) {
-      localStorage.removeItem(STORAGE_KEY);
-      refreshLeaderboard();
+      const res = await fetch(`${API_BASE}/scores`);
+      if (!res.ok) throw new Error('Failed to fetch scores');
+      const data = await res.json();
+      return data.scores || [];
+    } catch (err) {
+      console.error('getScores error:', err);
+      return [];
     }
+  }
+
+  // Post a new score to the backend
+  async function saveScore(name, time) {
+    try {
+      const res = await fetch(`${API_BASE}/scores`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, time }),
+      });
+      if (!res.ok) throw new Error('Failed to save score');
+      return await res.json();
+    } catch (err) {
+      console.error('saveScore error:', err);
+    }
+  }
+
+  // Delete all scores on the backend
+  async function clearScores() {
+    if (!confirm('Clear all scores?')) return;
+    try {
+      const res = await fetch(`${API_BASE}/scores`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to clear scores');
+    } catch (err) {
+      console.error('clearScores error:', err);
+    }
+    refreshLeaderboard();
   }
 
   // ---- VIEWS ----
@@ -608,17 +633,19 @@
     }, 50);
   }
 
-  function finishGame() {
+  // finishGame is async so we can await the backend save before showing success
+  async function finishGame() {
     gameActive = false;
     clearInterval(timerInterval);
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-    saveScore(playerName, parseFloat(elapsed));
+
+    // Save to backend first, then update UI
+    await saveScore(playerName, parseFloat(elapsed));
 
     document.getElementById('success-name').textContent = playerName;
     document.getElementById('success-time').textContent = elapsed;
 
-    // Update nav count
-    updateNavCount();
+    await updateNavCount();
     showView('success');
   }
 
@@ -628,10 +655,10 @@
   }
 
   // ---- LEADERBOARD ----
-  function refreshLeaderboard() {
-    const scores = getScores();
+  async function refreshLeaderboard() {
+    const scores = await getScores();
     const list = document.getElementById('leaderboard-list');
-    updateNavCount();
+    await updateNavCount();
 
     if (scores.length === 0) {
       list.innerHTML = '<div class="empty-state">Waiting for players to submit... 👀</div>';
@@ -644,14 +671,24 @@
     list.innerHTML = scores.map((s, i) => `
       <div class="lb-row ${rankClasses[i] || ''}">
         <div class="lb-rank">${medals[i] || (i + 1)}</div>
-        <div class="lb-name">${s.name}</div>
+        <div class="lb-name">${escapeHtml(s.name)}</div>
         <div class="lb-time ${i === 0 ? 'fast' : ''}">${s.time.toFixed(2)}s</div>
       </div>
     `).join('');
   }
 
-  function updateNavCount() {
-    document.getElementById('nav-count').textContent = getScores().length;
+  async function updateNavCount() {
+    const scores = await getScores();
+    document.getElementById('nav-count').textContent = scores.length;
+  }
+
+  // Prevent XSS from player-submitted names in the leaderboard
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 
   // Auto-refresh host view every 3s
