@@ -718,7 +718,6 @@
     await updateNavCount();
   } catch (err) {
     console.error('finishGame save error:', err);
-    document.getElementById('success-label').textContent = '⚠️ Result could not be saved. Please try again.';
     document.getElementById('success-label').className = 'success-label error';
   }
 }
