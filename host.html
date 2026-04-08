@@ -256,9 +256,14 @@
     <div class="empty-state">Waiting for players to submit... 👀</div>
   </div>
 
-  <div class="host-controls">
-    <button class="btn btn-primary" onclick="refreshLeaderboard()" style="flex:2;">Refresh 🔄</button>
-  </div>
+ <div class="host-controls">
+  <button class="btn btn-ghost" onclick="clearScores()" style="flex:1;">
+    Clear All Scores
+  </button>
+  <button class="btn btn-primary" onclick="refreshLeaderboard()" style="flex:2;">
+    Refresh 🔄
+  </button>
+</div>
 </div>
 
 <script>
@@ -277,6 +282,24 @@
     }
   }
 
+  async function clearScores() {
+  const confirmClear = confirm('Are you sure you want to clear all scores?');
+  if (!confirmClear) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/scores`, {
+      method: 'DELETE'
+    });
+
+    if (!res.ok) throw new Error('Failed to clear scores');
+
+    // Refresh leaderboard after clearing
+    refreshLeaderboard();
+  } catch (err) {
+    console.error('clearScores error:', err);
+    alert('Failed to clear scores');
+  }
+}
   async function refreshLeaderboard() {
   const scores = await getScores();
   const list = document.getElementById('leaderboard-list');
