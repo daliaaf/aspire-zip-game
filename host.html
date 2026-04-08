@@ -262,6 +262,7 @@
 </div>
 
 <script>
+  let lastTopScoreTs = null;
   const API_BASE = 'https://aspire-zip-game-backend.onrender.com/api';
 
   async function getScores() {
@@ -277,26 +278,43 @@
   }
 
   async function refreshLeaderboard() {
-    const scores = await getScores();
-    const list = document.getElementById('leaderboard-list');
-    document.getElementById('nav-count').textContent = scores.length;
+  const scores = await getScores();
+  const list = document.getElementById('leaderboard-list');
+  document.getElementById('nav-count').textContent = scores.length;
 
-    if (scores.length === 0) {
-      list.innerHTML = '<div class="empty-state">Waiting for players to submit... 👀</div>';
-      return;
-    }
+  if (scores.length === 0) {
+    list.innerHTML = '<div class="empty-state">Waiting for players to submit... 👀</div>';
+    return;
+  }
 
-    const medals = ['🥇', '🥈', '🥉'];
-    const rankClasses = ['first', 'second', 'third'];
+  const medals = ['🥇', '🥈', '🥉'];
+  const rankClasses = ['first', 'second', 'third'];
 
-    list.innerHTML = scores.map((s, i) => `
-      <div class="lb-row ${rankClasses[i] || ''}">
+  const newTop = scores[0];
+  const isNewTop = newTop && newTop.ts !== lastTopScoreTs;
+
+  list.innerHTML = scores.map((s, i) => {
+    const isNew = i === 0 && isNewTop;
+
+    return `
+      <div class="lb-row ${rankClasses[i] || ''} ${isNew ? 'new-entry' : ''}">
         <div class="lb-rank">${medals[i] || (i + 1)}</div>
         <div class="lb-name">${escapeHtml(s.name)}</div>
         <div class="lb-time ${i === 0 ? 'fast' : ''}">${Number(s.time).toFixed(2)}s</div>
       </div>
-    `).join('');
+    `;
+  }).join('');
+
+  // Save last top score
+  if (newTop) {
+    lastTopScoreTs = newTop.ts;
   }
+
+  // Auto scroll to top if new score
+  if (isNewTop) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
 
   function escapeHtml(str) {
     return String(str)
