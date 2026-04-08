@@ -648,19 +648,23 @@
   }
 
   function updateSequenceDisplay() {
-    const wrap = document.getElementById('sequence-display');
-    wrap.innerHTML = '';
-    const show = 5;
-    const start = Math.max(0, currentTarget - 2);
-    const end = Math.min(totalNumbers + 1, start + show);
-    for (let i = start; i < end; i++) {
-      const n = i + 1;
-      const el = document.createElement('div');
-      el.className = 'seq-item' + (n === currentTarget ? ' active' : (n < currentTarget ? ' done' : ''));
-      el.textContent = n;
-      wrap.appendChild(el);
-    }
+  const wrap = document.getElementById('sequence-display');
+  wrap.innerHTML = '';
+
+  const show = 5;
+  const safeTarget = Math.min(currentTarget, totalNumbers);
+  const startNum = Math.max(1, safeTarget - 2);
+  const endNum = Math.min(totalNumbers, startNum + show - 1);
+
+  for (let n = startNum; n <= endNum; n++) {
+    const el = document.createElement('div');
+    el.className =
+      'seq-item' +
+      (n === safeTarget ? ' active' : (n < currentTarget ? ' done' : ''));
+    el.textContent = n;
+    wrap.appendChild(el);
   }
+}
 
   function updateProgress() {
     const pct = ((currentTarget - 1) / totalNumbers) * 100;
@@ -695,26 +699,29 @@
 
   // finishGame is async so we can await the backend save before showing success
   async function finishGame() {
-    gameActive = false;
-    clearInterval(timerInterval);
-    const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+  gameActive = false;
+  clearInterval(timerInterval);
 
-    // Save to backend first, then update UI
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+
+  document.getElementById('success-name').textContent = playerName;
+  document.getElementById('success-time').textContent = elapsed;
+  document.getElementById('success-label').textContent = 'Saving your result...';
+  document.getElementById('success-label').className = 'success-label';
+
+  showView('success');
+
+  try {
     await saveScore(playerName, parseFloat(elapsed));
-
-    document.getElementById('success-name').textContent = playerName;
-    document.getElementById('success-time').textContent = elapsed;
-
+    document.getElementById('success-label').textContent = '✅ Your result has been recorded!';
+    document.getElementById('success-label').className = 'success-label saved';
     await updateNavCount();
-    const successCard = document.getElementById('success-card');
-    if (successCard) {
-      successCard.classList.remove('success-highlight');
-      void successCard.offsetWidth;
-      successCard.classList.add('success-highlight');
-    }
-    
-    showView('success');
+  } catch (err) {
+    console.error('finishGame save error:', err);
+    document.getElementById('success-label').textContent = '⚠️ Result could not be saved. Please try again.';
+    document.getElementById('success-label').className = 'success-label error';
   }
+}
 
   function resetGame() {
     document.getElementById('player-name').value = '';
