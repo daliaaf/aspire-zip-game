@@ -427,7 +427,10 @@
 
 <div class="nav">
   <button class="nav-btn" onclick="showView('home')">Game</button>
-  <button class="nav-btn" onclick="showView('host')">🔒 Host <span class="count-badge" id="nav-count">0</span></button>
+  <!-- <button class="nav-btn" onclick="showView('host')">🔒 Host <span class="count-badge" id="nav-count">0</span></button> -->
+  <a href="host.html" class="nav-btn">
+  🔒 Host <span class="count-badge" id="nav-count">0</span>
+</a>
 </div>
 
 <!-- HOME / PLAYER VIEW -->
@@ -469,7 +472,7 @@
 </div>
 
 <!-- HOST VIEW -->
-<div class="view" id="view-host">
+<!-- <div class="view" id="view-host">
   <div class="host-header">
     <div class="host-title">🔒 Host Leaderboard</div>
     <div class="live-badge"><div class="live-dot"></div> LIVE</div>
@@ -480,7 +483,7 @@
   <div class="host-controls">
     <button class="btn btn-primary" onclick="refreshLeaderboard()" style="flex:2;">Refresh 🔄</button>
   </div>
-</div>
+</div> -->
 
 <script>
   // ---- BACKEND CONFIG ----
@@ -544,7 +547,11 @@
   function showView(name) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById('view-' + name).classList.add('active');
-    if (name === 'host') refreshLeaderboard();
+    // if (name === 'host') refreshLeaderboard();
+    setInterval(() => {
+    const hostView = document.getElementById('view-host');
+    if (hostView.classList.contains('active')) refreshLeaderboard();
+  }, 3000);
   }
 
   // ---- GAME ----
