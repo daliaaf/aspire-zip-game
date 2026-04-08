@@ -415,6 +415,35 @@
     border-radius: 10px;
     margin-left: 4px;
   }
+  .success-panel {
+  animation: successEnter 0.5s ease;
+}
+
+.success-card-glow {
+  box-shadow: 0 0 35px rgba(255, 215, 0, 0.18);
+  border-color: rgba(255, 215, 0, 0.25);
+}
+
+.success-label.saved {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.success-label.error {
+  color: #ff6b6b;
+  font-weight: 600;
+}
+
+@keyframes successEnter {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
 
   /* QR section */
   .qr-box {
@@ -484,13 +513,15 @@
 
 <!-- SUCCESS VIEW -->
 <div class="view" id="view-success">
-  <div class="success-icon">🎉</div>
-  <div class="success-name" id="success-name"></div>
-  <div class="success-time" id="success-time"></div>
-  <div class="success-label">seconds — your time is recorded!</div>
-<div class="card success-highlight" id="success-card" style="text-align:center; max-width:360px;">
-  <p style="color:var(--muted); font-size:14px; margin-bottom:1.25rem;">Tell the host to check the leaderboard. Good luck! 🏆</p>
-    <button class="btn btn-primary" onclick="resetGame()">Play Again</button>
+  <div class="success-panel">
+    <div class="success-icon">🎉</div>
+    <div class="success-name" id="success-name"></div>
+    <div class="success-time" id="success-time"></div>
+    <div class="success-label" id="success-label">Saving your result...</div>
+    <div class="card success-card-glow" style="text-align:center; max-width:360px;">
+      <p style="color:var(--muted); font-size:14px; margin-bottom:1.25rem;">Tell the host to check the leaderboard. Good luck! 🏆</p>
+      <button class="btn btn-primary" onclick="resetGame()">Play Again</button>
+    </div>
   </div>
 </div>
 
