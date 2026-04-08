@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Host Leaderboard — ZIP Game</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #0a0a0f;
+    color: #f0f0ff;
+    padding: 2rem;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+
+  .title {
+    font-family: 'Syne', sans-serif;
+    font-size: 24px;
+    color: #00e5ff;
+  }
+
+  .leaderboard {
+    max-width: 700px;
+    margin: auto;
+  }
+
+  .row {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px;
+    background: #1a1a26;
+    border-radius: 10px;
+    margin-bottom: 8px;
+  }
+
+  .empty {
+    text-align: center;
+    color: #6b6b8a;
+    margin-top: 50px;
+  }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  button {
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+
+  .primary {
+    background: #00e5ff;
+    color: black;
+  }
+
+  .danger {
+    background: #ff3cac;
+    color: white;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <div class="title">🔒 Host Leaderboard</div>
+  <a href="index.html" style="color:#00e5ff;">← Back to Game</a>
+</div>
+
+<div class="leaderboard" id="list">
+  <div class="empty">Waiting for players...</div>
+</div>
+
+<div class="controls">
+  <button class="primary" onclick="refresh()">Refresh</button>
+  <button class="danger" onclick="clearScores()">Clear</button>
+</div>
+
+<script>
+const API_BASE = 'https://aspire-zip-game-backend.onrender.com/api';
+
+async function getScores() {
+  const res = await fetch(`${API_BASE}/scores`);
+  const data = await res.json();
+  return data.scores || [];
+}
+
+async function refresh() {
+  const scores = await getScores();
+  const list = document.getElementById('list');
+
+  if (!scores.length) {
+    list.innerHTML = '<div class="empty">Waiting for players...</div>';
+    return;
+  }
+
+  list.innerHTML = scores.map((s, i) => `
+    <div class="row">
+      <div>${i + 1}. ${s.name}</div>
+      <div>${s.time.toFixed(2)}s</div>
+    </div>
+  `).join('');
+}
+
+async function clearScores() {
+  if (!confirm('Clear all scores?')) return;
+  await fetch(`${API_BASE}/scores`, { method: 'DELETE' });
+  refresh();
+}
+
+// auto refresh every 3 sec
+setInterval(refresh, 3000);
+
+// initial load
+refresh();
+</script>
+
+</body>
+</html>
